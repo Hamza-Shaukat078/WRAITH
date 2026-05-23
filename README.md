@@ -14,6 +14,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![OWASP](https://img.shields.io/badge/OWASP-API%20Top%2010-red?style=flat-square)](https://owasp.org/API-Security/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Online-06b6d4?style=flat-square&logo=render)](https://wraith-t5sl.onrender.com)
+
+### 🔗 [wraith-t5sl.onrender.com](https://wraith-t5sl.onrender.com)
 
 > **For authorized security testing only.**  
 > WRAITH automates common API vulnerability discovery with real-time streaming results and a professional hacking dashboard.
