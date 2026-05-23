@@ -32,21 +32,15 @@
 <div align="center">
 
 ### Dashboard
-<!-- <img src="screenshots/dashboard.png" width="100%"/> -->
+<img width="3840" height="1740" alt="image" src="https://github.com/user-attachments/assets/06a039a4-5049-49ca-9b6e-4b76ca214506" />
 ```
 [ Screenshot: Full Dashboard — add image here ]
 ```
 
 ### Loading Screen
-<!-- <img src="screenshots/loader.png" width="100%"/> -->
+<img width="3837" height="1712" alt="image" src="https://github.com/user-attachments/assets/ebdfca3f-e249-47da-bf7c-29e039d59195" />
 ```
 [ Screenshot: Loading Screen — add image here ]
-```
-
-### Live Scan in Progress
-<!-- <img src="screenshots/scan.png" width="100%"/> -->
-```
-[ Screenshot: Live Scan Stream — add image here ]
 ```
 
 </div>
