@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/static/logo.png"/>
+<title>WRAITH — Hunt the Gaps</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:#060d1f;font-family:'Courier New',monospace;overflow:hidden;height:100vh;color:#e2e8f0}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(6,182,212,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(6,182,212,.03) 1px,transparent 1px);
+  background-size:52px 52px}
+
+/* ── APP SHELL ── */
+.app-shell{position:relative;z-index:10;display:flex;height:100vh;overflow:hidden}
+
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+.sidebar{width:290px;flex-shrink:0;background:rgba(3,7,22,.99);border-right:1px solid rgba(6,182,212,.16);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* Logo */
+.sb-logo{padding:16px 16px 14px;border-bottom:1px solid rgba(6,182,212,.12);flex-shrink:0}
+.sb-logo-row{display:flex;align-items:center;gap:13px}
+.sb-logo-img{width:56px;height:56px;object-fit:contain;flex-shrink:0}
+.sb-logo-name{font-size:26px;font-weight:900;letter-spacing:.18em;color:#06b6d4;text-shadow:0 0 14px rgba(6,182,212,.55);line-height:1}
+.sb-logo-sub{font-size:10px;color:#06b6d4;opacity:.65;text-transform:uppercase;letter-spacing:.1em;line-height:1.6;margin-top:4px}
+
+/* Section header */
+.sb-sec{padding:14px 18px 8px;font-size:12px;font-weight:700;color:#06b6d4;text-transform:uppercase;letter-spacing:.2em;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sb-sec svg{width:12px;height:12px}
+
+/* History */
+.hist-scroll{flex:1;overflow-y:auto;padding:4px 12px;min-height:0}
+.hist-scroll::-webkit-scrollbar{width:2px}
+.hist-scroll::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
+.hist-empty{font-size:12px;color:#334155;text-align:center;padding:24px 0;letter-spacing:.08em}
+
+.hist-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:6px;border:1px solid rgba(6,182,212,.2);background:rgba(6,182,212,.03);margin-bottom:7px;cursor:pointer;transition:all .18s}
+.hist-item:hover{border-color:rgba(6,182,212,.38);background:rgba(6,182,212,.07)}
+.hist-item.active{border-color:#06b6d4;background:rgba(6,182,212,.1)}
+.hist-icon{width:30px;height:30px;flex-shrink:0;color:#06b6d4;display:flex;align-items:center;justify-content:center}
+.hist-icon svg{width:18px;height:18px}
+.hist-text{flex:1;min-width:0}
+.hist-domain{font-size:14px;font-weight:700;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-time{font-size:11px;color:#475569;margin-top:3px}
+.hist-badge{font-size:10px;font-weight:800;padding:4px 9px;border-radius:4px;letter-spacing:.07em;flex-shrink:0;text-transform:uppercase}
+.hb-done{background:rgba(52,211,153,.08);color:#34d399;border:1px solid rgba(52,211,153,.35)}
+.hb-crit{background:rgba(220,38,38,.1);color:#f87171;border:1px solid rgba(220,38,38,.35)}
+.hb-high{background:rgba(251,146,60,.1);color:#fb923c;border:1px solid rgba(251,146,60,.35)}
+
+/* New Scan */
+.new-scan-wrap{padding:8px 12px 10px;flex-shrink:0}
+.new-scan-btn{width:100%;padding:13px;background:rgba(6,182,212,.04);border:1px solid rgba(6,182,212,.35);color:#06b6d4;font-weight:800;font-size:13px;letter-spacing:.22em;text-transform:uppercase;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;font-family:inherit;transition:all .18s}
+.new-scan-btn:hover{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.6)}
+
+/* Quick Stats */
+.sb-qs{padding:12px 18px 16px;border-top:1px solid rgba(6,182,212,.1);flex-shrink:0}
+.qs-hdr{font-size:12px;font-weight:700;color:#06b6d4;text-transform:uppercase;letter-spacing:.2em;margin-bottom:12px}
+.qs-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.qs-row:last-child{border-bottom:none}
+.qs-lbl{display:flex;align-items:center;gap:10px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+.qs-lbl svg{width:16px;height:16px;flex-shrink:0}
+.qs-val{font-size:14px;font-weight:900;font-family:'Courier New',monospace}
+.qs-actions{padding-top:10px}
+.clear-history-btn{width:100%;padding:10px;background:rgba(6,182,212,.03);border:1px solid rgba(6,182,212,.28);color:#06b6d4;font-weight:800;font-size:12px;letter-spacing:.2em;text-transform:uppercase;border-radius:6px;cursor:pointer;font-family:inherit;transition:all .18s}
+.clear-history-btn:hover{background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.5)}
+
+/* ══════════════════════════════════════
+   MAIN WRAP
+══════════════════════════════════════ */
+.main-wrap{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;background:rgba(3,6,18,.97);border-bottom:1px solid rgba(6,182,212,.14);flex-shrink:0}
+
+.tb-nav{display:flex;align-items:center;gap:2px}
+.tb-tab{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#475569;padding:0 16px;height:48px;display:flex;align-items:center;border-bottom:2px solid transparent;cursor:pointer;transition:all .18s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;margin-bottom:-1px}
+.tb-tab:hover{color:#94a3b8}
+.tb-tab.active{color:#06b6d4;border-bottom-color:#06b6d4}
+
+.tb-right{display:flex;align-items:center;gap:12px}
+.tb-status{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.tb-sdot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 7px #34d399;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.tb-slbl{color:#475569}
+.tb-sval{color:#34d399}
+.tb-icon{width:28px;height:28px;border:1px solid rgba(6,182,212,.18);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#475569;transition:all .18s}
+.tb-icon:hover{border-color:rgba(6,182,212,.4);color:#06b6d4}
+.tb-icon svg{width:13px;height:13px}
+
+/* ── 3-COLUMN CONTENT ROW ── */
+.content-row{flex:1;display:flex;overflow:hidden;min-height:0}
+.center-col{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.center-col::-webkit-scrollbar{width:3px}
+.center-col::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
+.right-col{width:340px;flex-shrink:0;border-left:1px solid rgba(6,182,212,.12);overflow-y:auto;padding:14px 14px;display:flex;flex-direction:column;gap:12px;background:rgba(3,6,18,.6)}
+.right-col::-webkit-scrollbar{width:2px}
+.right-col::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
+
+/* 5-col stats (center only) */
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);background:rgba(4,10,28,.96);border:1px solid rgba(6,182,212,.2);border-radius:8px;overflow:hidden}
+
+/* Mini duration/status card (right col) */
+.dur-card{display:grid;grid-template-columns:1fr 1fr;background:rgba(4,10,28,.96);border:1px solid rgba(6,182,212,.2);border-radius:8px;overflow:hidden}
+.dur-cell{padding:14px 16px}
+.dur-cell:first-child{border-right:1px solid rgba(6,182,212,.1)}
+
+/* Charts row (2 col in center) */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:4px}
+
+/* ── CARD ── */
+.card{background:rgba(4,10,28,.96);border:1px solid rgba(6,182,212,.2);border-radius:8px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;inset:0;border-radius:8px;background:linear-gradient(135deg,rgba(6,182,212,.05),transparent 60%);pointer-events:none;z-index:0}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid rgba(6,182,212,.08);position:relative;z-index:1}
+.card-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#94a3b8}
+.card-title svg{width:13px;height:13px;color:#94a3b8}
+.card-body{padding:12px 16px;position:relative;z-index:1}
+
+/* ── CONFIG ROW ── */
+.config-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-lbl{font-size:11px;color:#06b6d4;text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px}
+.field-input{width:100%;background:rgba(2,6,20,.85);border:1px solid rgba(6,182,212,.22);border-radius:5px;color:#06b6d4;padding:9px 12px;font-family:inherit;font-size:14px;outline:none;transition:border-color .18s,box-shadow .18s}
+.field-input::placeholder{color:#1e3a5f;color:#334155}
+.field-input:focus{border-color:#06b6d4;box-shadow:0 0 0 1px rgba(6,182,212,.2)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.field-select{appearance:none;background:rgba(2,6,20,.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2306b6d4'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid rgba(6,182,212,.22);border-radius:5px;color:#06b6d4;padding:9px 12px;padding-right:28px;font-family:inherit;font-size:14px;outline:none;width:100%}
+.token-wrap{position:relative}
+.token-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:#475569;background:none;border:none;padding:0;display:flex;align-items:center}
+.token-eye svg{width:14px;height:14px}
+.save-btn{background:transparent;border:1px solid rgba(6,182,212,.25);color:#06b6d4;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 12px;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .18s}
+.save-btn:hover{background:rgba(6,182,212,.1)}
+
+/* modules */
+.modules-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.mod-tile{background:rgba(2,6,20,.75);border:1px solid rgba(6,182,212,.22);border-radius:6px;padding:12px 10px 10px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mod-tile.on{border-color:rgba(6,182,212,.4);background:rgba(6,182,212,.06)}
+.mod-tile.off{opacity:.4;border-color:rgba(6,182,212,.1)}
+.mod-tile-top{display:flex;align-items:center;gap:6px}
+.mod-tile svg{width:16px;height:16px;flex-shrink:0;color:#06b6d4}
+.mod-tile.off svg{color:#334155}
+.mod-name{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#94a3b8;white-space:nowrap}
+.mod-tile.off .mod-name{color:#334155}
+.mod-badge{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.mod-tile.on .mod-badge{color:#34d399}
+.mod-tile.off .mod-badge{color:#334155}
+
+.initiate-btn{width:100%;padding:12px;background:linear-gradient(135deg,#0891b2,#06b6d4);color:#020617;font-weight:900;font-size:13px;letter-spacing:.22em;text-transform:uppercase;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;position:relative;z-index:5;overflow:hidden;transition:opacity .18s;margin-top:10px;flex-shrink:0}
+.initiate-btn:hover:not(:disabled){opacity:.88}
+.initiate-btn:disabled{background:#1e293b;color:#334155;cursor:not-allowed}
+.initiate-btn svg{width:12px;height:12px}
+.initiate-btn.scanning::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:sweep 1.4s linear infinite}
+@keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── STATS BAR ── */
+.sc{padding:12px 14px;border-right:1px solid rgba(6,182,212,.1);position:relative;min-width:0}
+.sc:last-child{border-right:none}
+.sc-lbl{font-size:11px;color:#06b6d4;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;white-space:nowrap}
+.sc-val{font-size:44px;font-weight:900;font-family:'Courier New',monospace;line-height:1;display:flex;align-items:baseline;gap:5px}
+.sc-sub{font-size:11px;color:#06b6d4;margin-top:3px;letter-spacing:.04em}
+.sc-dur{font-size:34px;font-weight:900;font-family:'Courier New',monospace;line-height:1;color:#06b6d4;text-shadow:0 0 14px rgba(6,182,212,.5)}
+.sc-status-wrap{display:flex;align-items:center;gap:8px;margin-top:8px}
+.sc-sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sc-stxt{font-size:16px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+@keyframes ripple{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(2.2)}}
+.sc-running-ring{width:18px;height:18px;position:relative;flex-shrink:0}
+.sc-running-ring::before,.sc-running-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:1.5px solid #fb923c}
+.sc-running-ring::after{animation:ripple 1.4s ease-out infinite}
+
+/* ── MID ROW ── */
+.mid-row{display:grid;grid-template-columns:1fr 300px;gap:12px}
+
+.stream-tabs{display:flex;border-bottom:1px solid rgba(6,182,212,.08);padding:0 16px;position:relative;z-index:1;flex-shrink:0}
+.stab{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#475569;padding:12px 16px;border-bottom:2px solid transparent;cursor:pointer;background:transparent;border-top:none;border-left:none;border-right:none;font-family:inherit;transition:all .18s;margin-bottom:-1px}
+.stab.active{color:#e2e8f0;border-bottom-color:#06b6d4}
+.stab:hover:not(.active){color:#94a3b8}
+
+.stream-body{height:260px;overflow-y:auto;padding:12px 16px;font-size:13px;line-height:1.7;position:relative;z-index:1}
+.stream-body::-webkit-scrollbar{width:2px}
+.stream-body::-webkit-scrollbar-thumb{background:#1e3a5f}
+.stream-empty{color:#334155;font-size:13px;font-family:'Courier New',monospace}
+
+.s-entry{display:flex;flex-direction:column;margin-bottom:4px;animation:fsl .2s ease;cursor:pointer}
+.s-entry:hover .s-msg{color:#e2e8f0}
+@keyframes fsl{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.s-line{display:flex;align-items:baseline;gap:8px}
+.s-ts{color:#06b6d4;flex-shrink:0;font-size:13px}
+.s-sev{font-size:13px;font-weight:900;padding:0 6px;border-radius:2px;flex-shrink:0;letter-spacing:.04em;background:none!important}
+.s-msg{color:#e2e8f0;font-size:13px}
+.s-sub{color:#64748b;font-size:13px;padding-left:0;margin-left:2px}
+
+.sc-CRITICAL{color:#f87171}
+.sc-HIGH{color:#fb923c}
+.sc-MEDIUM{color:#fbbf24}
+.sc-LOW{color:#4ade80}
+.sc-INFO{color:#22d3ee}
+
+/* top vulns */
+.tv-list{padding:6px 14px;position:relative;z-index:1}
+.tv-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(6,182,212,.06);cursor:pointer;transition:opacity .18s}
+.tv-item:last-child{border-bottom:none}
+.tv-item:hover{opacity:.75}
+.tv-num{width:22px;height:22px;border-radius:4px;background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.45);font-size:12px;font-weight:900;color:#fb923c;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tv-info{flex:1;min-width:0}
+.tv-title{font-size:13px;color:#e2e8f0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-ep{font-size:11px;color:#22d3ee;opacity:.5;margin-top:2px}
+.tv-badge{font-size:10px;font-weight:900;padding:3px 9px;border-radius:3px;flex-shrink:0;letter-spacing:.07em;text-transform:uppercase}
+.view-all{display:flex;align-items:center;gap:6px;padding:10px 14px;font-size:12px;font-weight:700;color:#06b6d4;cursor:pointer;border-top:1px solid rgba(6,182,212,.08);transition:opacity .18s;position:relative;z-index:1;letter-spacing:.12em;text-transform:uppercase}
+.view-all:hover{opacity:.7}
+
+/* ── BOTTOM ROW ── */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding-bottom:6px}
+
+/* Radar chart card */
+.radar-inner{display:flex;gap:16px;align-items:center;padding:12px 16px;position:relative;z-index:1}
+.radar-canvas-wrap{flex-shrink:0}
+.radar-leg{flex:1;display:flex;flex-direction:column;gap:8px}
+.rl-row{display:flex;align-items:center;gap:8px}
+.rl-line{flex:1;height:2px;border-radius:1px}
+.rl-cnt{font-size:14px;font-weight:900;font-family:'Courier New',monospace;min-width:22px;text-align:right}
+.rl-pct{font-size:12px;color:#64748b;min-width:30px;text-align:right}
+.rl-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;min-width:64px}
+
+/* Severity chart */
+.chart-body{padding:10px 16px 14px;height:180px;position:relative;z-index:1}
+
+/* Progress */
+.prog-body{padding:14px 16px;display:flex;flex-direction:row;gap:16px;align-items:flex-start;position:relative;z-index:1}
+.ring-wrap{flex-shrink:0}
+.prog-ring{position:relative;width:100px;height:100px}
+.ring-svg{width:100px;height:100px;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(6,182,212,.1);stroke-width:7}
+.ring-fill{fill:none;stroke:#06b6d4;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 6px #06b6d4)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-pct{font-size:26px;font-weight:900;color:#06b6d4;font-family:'Courier New',monospace;line-height:1;text-shadow:0 0 12px rgba(6,182,212,.6)}
+.ring-sub-lbl{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+.prog-stats{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
+.ps-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ps-row:last-of-type{border-bottom:none}
+.ps-lbl{color:#64748b;text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+.ps-val{color:#e2e8f0;font-weight:900;font-family:'Courier New',monospace;font-size:13px;text-align:right}
+.ps-module{color:#06b6d4}
+.pause-btn{width:100%;margin-top:10px;padding:10px;background:rgba(6,182,212,.05);border:1px solid rgba(6,182,212,.28);color:#06b6d4;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;border-radius:5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s}
+.pause-btn:hover:not(:disabled){background:rgba(6,182,212,.12)}
+.pause-btn:disabled{opacity:.3;cursor:not-allowed}
+.pause-btn svg{width:10px;height:10px}
+
+/* ── LOADER ── */
+#loader{position:fixed;inset:0;z-index:9999;background:#000000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:opacity .8s ease,visibility .8s ease}
+#loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+#loaderCanvas{position:absolute;inset:0;z-index:0}
+.loader-content{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center}
+.wraith-figure{width:620px;height:620px;object-fit:contain}
+.loader-status{margin-top:10px}
+.loader-logo{font-size:6.4rem;font-weight:900;letter-spacing:.35em;padding-right:.35em;background:linear-gradient(180deg,#f1f5f9 0%,#cbd5e1 30%,#06b6d4 62%,#0284c7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-top:-18px;animation:logoIn .7s cubic-bezier(.22,1,.36,1) both;animation-delay:.25s;opacity:0}
+@keyframes logoIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.loader-subtitle{font-size:13px;letter-spacing:.32em;text-transform:uppercase;color:#06b6d4;text-align:center;line-height:2;margin-top:8px;opacity:.8;animation:logoIn .6s ease both;animation-delay:.45s}
+.loader-hex-sep{display:flex;align-items:center;gap:14px;margin:18px 0 22px;animation:logoIn .5s ease both;animation-delay:.6s}
+.loader-hex-sep::before,.loader-hex-sep::after{content:'';flex:1;width:100px;height:1px;background:rgba(6,182,212,.35)}
+.loader-hex-dot{width:10px;height:10px;background:#06b6d4;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);box-shadow:0 0 10px #06b6d4}
+.loader-status{font-size:11px;color:#334155;letter-spacing:.14em;text-transform:uppercase;height:1.2rem;margin-bottom:12px;animation:logoIn .4s ease both;animation-delay:.75s}
+#loaderStatusText{color:#22d3ee}
+.loader-bar-wrap{width:240px;height:1px;background:rgba(6,182,212,.1);overflow:hidden;animation:logoIn .4s ease both;animation-delay:.85s}
+.loader-bar-fill{height:100%;background:linear-gradient(90deg,#0891b2,#06b6d4,#22d3ee);box-shadow:0 0 6px #06b6d4;width:0%;transition:width .12s linear}
+@keyframes blink{50%{opacity:0}}
+
+/* ── MODAL ── */
+#findingsModal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
+.modal-box{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:min(900px,92%);max-height:90vh;display:flex;flex-direction:column;background:rgba(4,10,28,.98);border:1px solid rgba(6,182,212,.22);border-radius:10px;overflow:hidden}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(6,182,212,.1);flex-shrink:0}
+.modal-title{font-size:13px;font-weight:700;color:#06b6d4;letter-spacing:.2em;text-transform:uppercase}
+.modal-close{background:none;border:none;color:#475569;cursor:pointer;font-size:18px;font-family:inherit;line-height:1;padding:0 4px}
+.modal-scroll{overflow-y:auto;padding:14px 20px}
+.modal-scroll::-webkit-scrollbar{width:3px}
+.modal-scroll::-webkit-scrollbar-thumb{background:#1e3a5f}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <canvas id="loaderCanvas"></canvas>
+  <div class="loader-content">
+    <img src="/static/logo.png" class="wraith-figure" alt="WRAITH"/>
+    <div class="loader-status"><span id="loaderStatusText">Initializing security protocols...</span></div>
+    <div class="loader-bar-wrap"><div class="loader-bar-fill" id="loaderBar"></div></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-shell">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+
+  <div class="sb-logo">
+    <div class="sb-logo-row">
+      <img src="/static/logo.png" class="sb-logo-img" alt="W"/>
+      <div>
+        <div class="sb-logo-name">WRAITH</div>
+        <div class="sb-logo-sub">Web Reconnaissance &amp; API<br>Intrusion Testing Harness</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-sec">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/></svg>
+    Scan History
+  </div>
+
+  <div class="hist-scroll" id="histScroll">
+    <div class="hist-empty" id="histEmpty">No previous scans</div>
+  </div>
+
+  <div class="new-scan-wrap">
+    <button class="new-scan-btn" onclick="newScan()">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 2 19 22 19"/></svg>
+      + New Scan
+    </button>
+  </div>
+
+  <div class="sb-qs">
+    <div class="qs-hdr">Quick Stats</div>
+    <div class="qs-row">
+      <div class="qs-lbl" style="color:#64748b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Total Scans
+      </div>
+      <div class="qs-val" id="qs-scans" style="color:#e2e8f0">0</div>
+    </div>
+    <div class="qs-row">
+      <div class="qs-lbl" style="color:#64748b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Vulnerabilities
+      </div>
+      <div class="qs-val" id="qs-vulns" style="color:#e2e8f0">0</div>
+    </div>
+    <div class="qs-row">
+      <div class="qs-lbl" style="color:#f87171">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Critical
+      </div>
+      <div class="qs-val" id="qs-crit" style="color:#f87171">0</div>
+    </div>
+    <div class="qs-row">
+      <div class="qs-lbl" style="color:#64748b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        High
+      </div>
+      <div class="qs-val" id="qs-high" style="color:#e2e8f0">0</div>
+    </div>
+    <div class="qs-row">
+      <div class="qs-lbl" style="color:#fbbf24">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Medium
+      </div>
+      <div class="qs-val" id="qs-med" style="color:#fbbf24">0</div>
+    </div>
+    <div class="qs-row">
+      <div class="qs-lbl" style="color:#64748b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Low / Info
+      </div>
+      <div class="qs-val" id="qs-low" style="color:#e2e8f0">0</div>
+    </div>
+    <div class="qs-actions">
+      <button class="clear-history-btn" onclick="clearHistory()">Clear History</button>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main-wrap">
+
+  <header class="topbar">
+    <nav class="tb-nav">
+      <button class="tb-tab active">Dashboard</button>
+      <button class="tb-tab">Targets</button>
+      <button class="tb-tab">Scans</button>
+      <button class="tb-tab">Reports</button>
+      <button class="tb-tab">Settings</button>
+    </nav>
+    <div class="tb-right">
+      <div class="tb-status">
+        <div class="tb-sdot"></div>
+        <span class="tb-slbl">Status</span>
+        <span class="tb-sval">Operational</span>
+      </div>
+      <div class="tb-icon" title="Export JSON" onclick="exportJSON()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <div class="tb-icon" title="Export PDF" onclick="exportPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="tb-icon" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <div class="content-row">
+
+  <!-- ══════════ CENTER COLUMN ══════════ -->
+  <div class="center-col">
+
+    <!-- Target Configuration -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          Target Configuration
+        </div>
+        <button class="save-btn">Save Target</button>
+      </div>
+      <div class="card-body">
+        <div class="field-lbl">Target URL</div>
+        <input id="targetUrl" class="field-input" type="url" placeholder="https://target-api.corp/v1"/>
+        <div class="field-row">
+          <div>
+            <div class="field-lbl">Auth Type</div>
+            <select id="authType" class="field-input field-select">
+              <option>Bearer Token</option><option>API Key</option><option>Basic Auth</option><option>None</option>
+            </select>
+          </div>
+          <div>
+            <div class="field-lbl">Auth Token</div>
+            <div class="token-wrap">
+              <input id="authToken" class="field-input" type="password" placeholder="eyJhbGciOiJIUzI1NiIs..." style="padding-right:36px"/>
+              <button class="token-eye" onclick="toggleToken()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5-col Stats Bar -->
+    <div class="stats-bar">
+      <div class="sc">
+        <div class="sc-lbl">Vulnerabilities Found</div>
+        <div class="sc-val" style="color:#06b6d4"><span id="sv-total">0</span></div>
+        <div class="sc-sub" id="sv-sub" style="color:#22d3ee;font-size:11px">—</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Critical</div>
+        <div class="sc-val" style="color:#f87171">
+          <span id="sv-crit">0</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" style="opacity:.6;margin-left:2px;margin-bottom:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">High</div>
+        <div class="sc-val" style="color:#fb923c">
+          <span id="sv-high">0</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fb923c" style="opacity:.6;margin-left:2px;margin-bottom:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/></svg>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Medium</div>
+        <div class="sc-val" style="color:#fbbf24">
+          <span id="sv-med">0</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" style="opacity:.55;margin-left:2px;margin-bottom:4px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Low / Info</div>
+        <div class="sc-val" style="color:#94a3b8"><span id="sv-low">0</span></div>
+      </div>
+    </div>
+
+    <!-- Live Findings Stream (full width) -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="stream-tabs">
+        <button class="stab active" onclick="switchTab(this,'stream')">Live Findings Stream</button>
+        <button class="stab" onclick="switchTab(this,'raw')">Raw HTTP Viewer</button>
+      </div>
+      <div class="stream-body" id="streamBody">
+        <div class="stream-empty">[ WRAITH ready — awaiting target ] <span style="animation:blink 1s step-end infinite;display:inline-block">█</span></div>
+      </div>
+      <div class="stream-body" id="rawBody" style="display:none">
+        <div id="rawEmpty" style="color:#334155;font-size:13px">Click a finding to view HTTP details</div>
+        <div id="rawContent" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">HTTP Request</div>
+              <pre id="rawReq" style="background:rgba(2,6,20,.9);border:1px solid rgba(6,182,212,.12);border-radius:5px;padding:10px;color:#64748b;white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.6;max-height:170px;overflow-y:auto"></pre>
+            </div>
+            <div>
+              <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">HTTP Response</div>
+              <pre id="rawRes" style="background:rgba(2,6,20,.9);border:1px solid rgba(6,182,212,.12);border-radius:5px;padding:10px;color:#64748b;white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.6;max-height:170px;overflow-y:auto"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom 2-col Charts -->
+    <div class="charts-row">
+
+      <!-- Vulnerability Breakdown -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 7.07 17.07"/></svg>
+            Vulnerability Breakdown
+          </div>
+        </div>
+        <div class="radar-inner">
+          <div class="radar-canvas-wrap">
+            <canvas id="radarChart" width="140" height="140"></canvas>
+          </div>
+          <div class="radar-leg" id="radarLeg">
+            <div style="font-size:13px;color:#334155">Run a scan first</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Severity Distribution -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Severity Distribution
+          </div>
+        </div>
+        <div class="chart-body">
+          <canvas id="sevChart" style="width:100%;height:100%"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /center-col -->
+
+  <!-- ══════════ RIGHT COLUMN ══════════ -->
+  <div class="right-col">
+
+    <!-- Scan Configuration -->
+    <div class="card" style="overflow:visible">
+      <div class="card-hdr">
+        <div class="card-title" style="color:#06b6d4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/></svg>
+          Scan Configuration
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="modules-grid">
+          <div class="mod-tile on" onclick="toggleMod(this,'idor')">
+            <input type="checkbox" value="idor" class="scan-check" checked style="display:none"/>
+            <div class="mod-tile-top">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/></svg>
+              <div class="mod-name">IDOR / BOLA</div>
+            </div>
+            <div class="mod-badge">Enabled</div>
+          </div>
+          <div class="mod-tile on" onclick="toggleMod(this,'broken_auth')">
+            <input type="checkbox" value="broken_auth" class="scan-check" checked style="display:none"/>
+            <div class="mod-tile-top">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div class="mod-name">Broken Auth</div>
+            </div>
+            <div class="mod-badge">Enabled</div>
+          </div>
+          <div class="mod-tile on" onclick="toggleMod(this,'jwt_check')">
+            <input type="checkbox" value="jwt_check" class="scan-check" checked style="display:none"/>
+            <div class="mod-tile-top">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <div class="mod-name">JWT Attacks</div>
+            </div>
+            <div class="mod-badge">Enabled</div>
+          </div>
+          <div class="mod-tile on" onclick="toggleMod(this,'rate_limit')">
+            <input type="checkbox" value="rate_limit" class="scan-check" checked style="display:none"/>
+            <div class="mod-tile-top">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div class="mod-name">Rate Limiting</div>
+            </div>
+            <div class="mod-badge">Enabled</div>
+          </div>
+        </div>
+        <button class="initiate-btn" id="initiateBtn" onclick="startScan()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+          Initiate Hunt
+        </button>
+      </div>
+    </div><!-- /scan config -->
+
+    <!-- Duration / Status -->
+    <div class="dur-card">
+      <div class="dur-cell">
+        <div class="sc-lbl">Scan Duration</div>
+        <div class="sc-dur" id="sv-dur">00:00:00</div>
+      </div>
+      <div class="dur-cell">
+        <div class="sc-lbl">Status</div>
+        <div class="sc-status-wrap">
+          <div class="sc-sdot" id="sv-sdot" style="background:#334155"></div>
+          <span class="sc-stxt" id="sv-status" style="color:#475569">IDLE</span>
+          <div class="sc-running-ring" id="sv-ring" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Vulnerabilities -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-hdr">
+        <div class="card-title" style="color:#f87171;font-size:14px;letter-spacing:.18em">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Top Vulnerabilities
+        </div>
+      </div>
+      <div class="tv-list" id="tvList" style="flex:1">
+        <div style="font-size:13px;color:#334155;padding:6px 0">No findings yet</div>
+      </div>
+      <div class="view-all" onclick="showModal()">
+        View All Findings
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- Scan Progress -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title" style="color:#06b6d4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Scan Progress
+        </div>
+      </div>
+      <div class="prog-body">
+        <div class="ring-wrap">
+          <div class="prog-ring">
+            <svg class="ring-svg" viewBox="0 0 96 96">
+              <circle class="ring-track" cx="48" cy="48" r="40"/>
+              <circle class="ring-fill" id="ringFill" cx="48" cy="48" r="40" stroke-dasharray="251.33" stroke-dashoffset="251.33"/>
+            </svg>
+            <div class="ring-center">
+              <div class="ring-pct" id="ringPct">0%</div>
+              <div class="ring-sub-lbl">Complete</div>
+            </div>
+          </div>
+        </div>
+        <div class="prog-stats">
+          <div class="ps-row"><span class="ps-lbl">Tests Executed</span><span class="ps-val" id="pg-tests">0 / 0</span></div>
+          <div class="ps-row"><span class="ps-lbl">Endpoints</span><span class="ps-val" id="pg-ep">0</span></div>
+          <div class="ps-row"><span class="ps-lbl">Payloads Sent</span><span class="ps-val" id="pg-pay">0</span></div>
+          <div class="ps-row"><span class="ps-lbl">Current Module</span><span class="ps-val ps-module" id="pg-mod">—</span></div>
+          <button class="pause-btn" id="pauseBtn" onclick="pauseScan()" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            Pause Scan
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right-col -->
+
+  </div><!-- /content-row -->
+
+</div><!-- /main-wrap -->
+</div><!-- /app-shell -->
+
+<!-- MODAL -->
+<div id="findingsModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-title">All Findings</div>
+      <button class="modal-close" onclick="document.getElementById('findingsModal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-scroll" id="modalList"></div>
+  </div>
+</div>
+
+<script>
+/* ════ LOADER ════ */
+(function(){
+  const lc=document.getElementById('loaderCanvas'),lx=lc.getContext('2d');
+  lc.width=innerWidth;lc.height=innerHeight;
+  const drops=Array.from({length:Math.ceil(innerWidth/22*.3)},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,spd:1.2+Math.random()*2,len:8+Math.random()*14|0,chars:Array.from({length:20},()=>Math.random()<.5?'01'[Math.random()*2|0]:'0123456789ABCDEF'[Math.random()*16|0])}));
+  let af;function draw(){lx.clearRect(0,0,lc.width,lc.height);for(const d of drops){for(let i=0;i<d.len;i++){const y=d.y-i*18;if(y<0)continue;const a=i===0?.22:(1-i/d.len)*.05;lx.fillStyle=i===0?`rgba(34,211,238,${a})`:`rgba(6,182,212,${a})`;lx.font=`${i===0?'bold ':''}11px monospace`;lx.fillText(d.chars[i%d.chars.length],d.x,y)}d.y+=d.spd;if(d.y-d.len*18>lc.height){d.y=-20;d.x=Math.random()*lc.width}}af=requestAnimationFrame(draw)}draw();
+  const msgs=['Initializing security protocols...','Loading attack modules...','Calibrating JWT forge engine...','Priming IDOR scanner...','Spinning up rate-limit probe...','WRAITH is ready.'];
+  const bar=document.getElementById('loaderBar'),st=document.getElementById('loaderStatusText');
+  let idx=0;const step=2800/msgs.length;
+  function next(){if(idx<msgs.length){st.textContent=msgs[idx];bar.style.width=((idx+1)/msgs.length*100)+'%';idx++;if(idx<msgs.length)setTimeout(next,step)}}
+  setTimeout(next,400);
+  setTimeout(()=>{cancelAnimationFrame(af);document.getElementById('loader').classList.add('hidden')},3200);
+})();
+
+/* ════ CONSTANTS ════ */
+const SEV_ORDER=['CRITICAL','HIGH','MEDIUM','LOW','INFO'];
+const SEV_COLOR={CRITICAL:'#f87171',HIGH:'#fb923c',MEDIUM:'#fbbf24',LOW:'#4ade80',INFO:'#22d3ee'};
+const SEV_BG={CRITICAL:'rgba(220,38,38,.18)',HIGH:'rgba(251,146,60,.14)',MEDIUM:'rgba(251,191,36,.12)',LOW:'rgba(74,222,128,.1)',INFO:'rgba(34,211,238,.1)'};
+
+/* ════ STATE ════ */
+let allFindings=[],scanHistory=[],activeHistIdx=-1;
+let scanStart=0,durTimer=null,totalMods=0,doneMods=0,curMod='—',payloads=0,endpoints=0;
+let qsScans=0,qsVulns=0,qsCrit=0,qsHigh=0,qsMed=0,qsLow=0;
+const STORAGE_KEY='wraith_scan_history_v1';
+
+/* ════ STORAGE ════ */
+function computeQuickStats(){
+  qsScans=scanHistory.length;
+  qsVulns=0;qsCrit=0;qsHigh=0;qsMed=0;qsLow=0;
+  scanHistory.forEach(h=>{
+    qsVulns+=h.total||0;
+    qsCrit+=h.crit||0;
+    qsHigh+=h.high||0;
+    const meds=(h.findings||[]).filter(f=>f.severity==='MEDIUM').length;
+    const lows=(h.findings||[]).filter(f=>['LOW','INFO'].includes(f.severity)).length;
+    qsMed+=meds;qsLow+=lows;
+  });
+  document.getElementById('qs-scans').textContent=qsScans;
+  document.getElementById('qs-vulns').textContent=qsVulns;
+  document.getElementById('qs-crit').textContent=qsCrit;
+  document.getElementById('qs-high').textContent=qsHigh;
+  document.getElementById('qs-med').textContent=qsMed;
+  document.getElementById('qs-low').textContent=qsLow;
+}
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({scanHistory,activeHistIdx}));
+  }catch(err){console.warn('Storage save failed',err)}
+}
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(Array.isArray(data.scanHistory))scanHistory=data.scanHistory;
+    if(Number.isInteger(data.activeHistIdx))activeHistIdx=data.activeHistIdx;
+    computeQuickStats();
+    renderHistory();
+    if(scanHistory.length&&activeHistIdx>=0&&activeHistIdx<scanHistory.length){
+      loadHist(activeHistIdx);
+    }
+  }catch(err){console.warn('Storage load failed',err)}
+}
+
+function clearHistory(){
+  if(!confirm('Clear all scan history? This cannot be undone.'))return;
+  scanHistory=[];
+  activeHistIdx=-1;
+  allFindings=[];
+  computeQuickStats();
+  renderHistory();
+  updateStatsBar();
+  updateTopVulns();
+  drawRadar();
+  drawChart();
+  setStatus('idle');
+  document.getElementById('sv-dur').textContent='00:00:00';
+  const body=document.getElementById('streamBody');
+  body.innerHTML='<div class="stream-empty">[ WRAITH ready — awaiting target ] <span style="animation:blink 1s step-end infinite;display:inline-block">█</span></div>';
+  document.getElementById('rawEmpty').style.display='block';
+  document.getElementById('rawContent').style.display='none';
+  try{localStorage.removeItem(STORAGE_KEY)}catch(err){console.warn('Storage clear failed',err)}
+}
+
+/* ════ UTILS ════ */
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtDur(ms){const s=Math.floor(ms/1000);return`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function aN(id,target){const el=document.getElementById(id);if(!el)return;clearInterval(el._t);const s=+el.textContent||0,steps=28;let n=0;el._t=setInterval(()=>{n++;el.textContent=Math.round(s+(target-s)*(n/steps));if(n>=steps){el.textContent=target;clearInterval(el._t)}},16)}
+function tsNow(){return new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+
+/* ════ TOGGLES ════ */
+function toggleToken(){const i=document.getElementById('authToken');i.type=i.type==='password'?'text':'password'}
+function toggleMod(tile){const cb=tile.querySelector('input');cb.checked=!cb.checked;tile.classList.toggle('on',cb.checked);tile.classList.toggle('off',!cb.checked);tile.querySelector('.mod-badge').textContent=cb.checked?'Enabled':'Disabled'}
+function switchTab(btn,tab){document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('streamBody').style.display=tab==='stream'?'block':'none';document.getElementById('rawBody').style.display=tab==='raw'?'block':'none'}
+
+/* ════ RAW VIEWER ════ */
+function showRaw(f){
+  document.querySelectorAll('.stab')[1].click();
+  const req=f.request||{},res=f.response||{};
+  const rqt=req.method?`${req.method} ${req.url}\n${Object.entries(req.headers||{}).map(([k,v])=>`${k}: ${v}`).join('\n')}`:'No request captured';
+  const rst=res.status_code?`HTTP ${res.status_code} ${res.reason||''}\n${Object.entries(res.headers||{}).slice(0,8).map(([k,v])=>`${k}: ${v}`).join('\n')}\n\n${res.body||''}`:(res.error||'No response captured');
+  document.getElementById('rawEmpty').style.display='none';
+  document.getElementById('rawContent').style.display='block';
+  document.getElementById('rawReq').textContent=rqt;
+  document.getElementById('rawRes').textContent=rst;
+}
+
+/* ════ STATUS ════ */
+function setStatus(state){
+  const dot=document.getElementById('sv-sdot'),lbl=document.getElementById('sv-status'),ring=document.getElementById('sv-ring');
+  if(state==='scanning'){
+    dot.style.cssText='width:9px;height:9px;border-radius:50%;background:#fb923c;box-shadow:0 0 8px #fb923c;flex-shrink:0';
+    lbl.style.color='#fb923c';lbl.textContent='RUNNING';
+    if(ring){ring.style.display='block';ring.style.borderColor='#fb923c'}
+  }else if(state==='complete'){
+    dot.style.cssText='width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;flex-shrink:0';
+    lbl.style.color='#34d399';lbl.textContent='COMPLETE';
+    if(ring)ring.style.display='none';
+  }else{
+    dot.style.cssText='width:9px;height:9px;border-radius:50%;background:#334155;flex-shrink:0';
+    lbl.style.color='#475569';lbl.textContent='IDLE';
+    if(ring)ring.style.display='none';
+  }
+}
+
+function updateStatsBar(){
+  const c={CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0,INFO:0};
+  allFindings.forEach(f=>c[f.severity||'INFO']=(c[f.severity||'INFO']||0)+1);
+  aN('sv-total',allFindings.length);
+  aN('sv-crit',c.CRITICAL);aN('sv-high',c.HIGH);
+  aN('sv-med',c.MEDIUM);aN('sv-low',c.LOW+c.INFO);
+  const sub=document.getElementById('sv-sub');
+  if(sub&&allFindings.length>0)sub.textContent=`+${allFindings.length} THIS SCAN`;
+}
+
+/* ════ PROGRESS RING ════ */
+function updateProg(){
+  const pct=totalMods?Math.round((doneMods/totalMods)*100):0;
+  const circ=251.33;
+  document.getElementById('ringFill').style.strokeDashoffset=circ*(1-pct/100);
+  document.getElementById('ringPct').textContent=pct+'%';
+  document.getElementById('pg-mod').textContent=curMod;
+  document.getElementById('pg-tests').textContent=`${doneMods*78} / ${totalMods*78}`;
+  document.getElementById('pg-ep').textContent=endpoints;
+  document.getElementById('pg-pay').textContent=payloads.toLocaleString();
+}
+
+/* ════ STREAM ════ */
+function appendStream(f){
+  const body=document.getElementById('streamBody');
+  const emp=body.querySelector('.stream-empty');if(emp)emp.remove();
+  const sev=f.severity||'INFO';
+  const short=f.title.replace(/^[^—]+—\s*/,'');
+  const ep=(f.evidence?.url||f.request?.url||'');
+  const epPath=ep?ep.replace(/^https?:\/\/[^/]+/,''):'';
+  const subLine=epPath?`→ Endpoint: <span style="color:#94a3b8">${escH(epPath.slice(0,60))}</span>`
+    :(f.description?`→ ${escH(f.description.slice(0,72))}${f.description.length>72?'…':''}`:'' );
+  const e=document.createElement('div');e.className='s-entry';
+  e.innerHTML=`<div class="s-line"><span class="s-ts">[${tsNow()}]</span>&nbsp;<span class="s-sev sc-${sev}">[${sev}]</span>&nbsp;<span class="s-msg">${escH(short)}</span></div>${subLine?`<div class="s-sub" style="color:#475569;padding-left:0">${subLine}</div>`:'' }`;
+  e.onclick=()=>showRaw(f);
+  body.appendChild(e);body.scrollTop=9999;
+}
+
+/* ════ TOP VULNS ════ */
+const TV_BADGE={
+  CRITICAL:'background:rgba(220,38,38,.25);color:#f87171;border:1px solid rgba(220,38,38,.5)',
+  HIGH:'background:rgba(251,146,60,.22);color:#fb923c;border:1px solid rgba(251,146,60,.5)',
+  MEDIUM:'background:rgba(251,191,36,.2);color:#fbbf24;border:1px solid rgba(251,191,36,.5)',
+  LOW:'background:transparent;color:#4ade80;border:none',
+  INFO:'background:transparent;color:#22d3ee;border:none'
+};
+function updateTopVulns(){
+  const sorted=[...allFindings].sort((a,b)=>SEV_ORDER.indexOf(a.severity||'INFO')-SEV_ORDER.indexOf(b.severity||'INFO'));
+  const list=document.getElementById('tvList');
+  if(!sorted.length){list.innerHTML='<div style="font-size:13px;color:#334155;padding:6px 0">No findings yet</div>';return}
+  list.innerHTML=sorted.slice(0,5).map((f,i)=>{
+    const sev=f.severity||'INFO';
+    const t=f.title.replace(/^[^—]+—\s*/,'').slice(0,36);
+    const ep=(f.evidence?.url||f.request?.url||'—').replace(/^https?:\/\/[^/]+/,'').slice(0,30);
+    return`<div class="tv-item" onclick="showRaw(allFindings[${allFindings.indexOf(f)}])"><div class="tv-num">${i+1}</div><div class="tv-info"><div class="tv-title">${escH(t)}</div><div class="tv-ep">${escH(ep)}</div></div><div class="tv-badge" style="${TV_BADGE[sev]||TV_BADGE.INFO}">${sev}</div></div>`;
+  }).join('');
+}
+
+/* ════ RADAR CHART ════ */
+function drawRadar(){
+  const canvas=document.getElementById('radarChart');
+  const ctx=canvas.getContext('2d');
+  const W=140,H=140,cx=70,cy=70,maxR=54;
+  const dpr=devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  const c={CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0,INFO:0};
+  allFindings.forEach(f=>c[f.severity||'INFO']=(c[f.severity||'INFO']||0)+1);
+  const axes=['CRITICAL','HIGH','MEDIUM','LOW','INFO'];
+  const n=axes.length;
+  const maxVal=Math.max(...axes.map(a=>c[a]),1);
+
+  /* Grid rings */
+  for(let r=1;r<=4;r++){
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const ang=(i/n)*Math.PI*2-Math.PI/2;
+      const rr=(r/4)*maxR;
+      const x=cx+rr*Math.cos(ang),y=cy+rr*Math.sin(ang);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle=`rgba(6,182,212,${r===4?.14:.07})`;ctx.lineWidth=1;ctx.stroke();
+  }
+  /* Spoke lines */
+  for(let i=0;i<n;i++){
+    const ang=(i/n)*Math.PI*2-Math.PI/2;
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+maxR*Math.cos(ang),cy+maxR*Math.sin(ang));
+    ctx.strokeStyle='rgba(6,182,212,.08)';ctx.lineWidth=1;ctx.stroke();
+  }
+
+  /* Data polygon */
+  const pts=axes.map((a,i)=>{
+    const ang=(i/n)*Math.PI*2-Math.PI/2;
+    const r=maxVal>0?(c[a]/maxVal)*maxR:0;
+    return{x:cx+r*Math.cos(ang),y:cy+r*Math.sin(ang)};
+  });
+  if(allFindings.length>0){
+    ctx.beginPath();
+    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.closePath();
+    ctx.fillStyle='rgba(248,113,113,.15)';ctx.fill();
+    ctx.strokeStyle='rgba(248,113,113,.7)';ctx.lineWidth=1.5;ctx.stroke();
+    /* Dots on polygon */
+    pts.forEach((p,i)=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);
+      ctx.fillStyle=SEV_COLOR[axes[i]];ctx.fill();
+    });
+    /* Center glow dot */
+    ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);
+    ctx.fillStyle='#f87171';
+    ctx.shadowBlur=8;ctx.shadowColor='#f87171';
+    ctx.fill();ctx.shadowBlur=0;
+  }
+
+  /* Axis labels */
+  ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  axes.forEach((a,i)=>{
+    const ang=(i/n)*Math.PI*2-Math.PI/2;
+    const r=maxR+12;
+    ctx.fillStyle=SEV_COLOR[a];
+    ctx.fillText(a.slice(0,4),cx+r*Math.cos(ang),cy+r*Math.sin(ang));
+  });
+
+  /* Update legend */
+  const leg=document.getElementById('radarLeg');
+  const total=allFindings.length||1;
+  if(allFindings.length===0){leg.innerHTML='<div style="font-size:13px;color:#334155">Run a scan first</div>';return}
+  const sevLabels={CRITICAL:'CRITICAL',HIGH:'HIGH',MEDIUM:'MEDIUM',LOW:'LOW / INFO',INFO:'INFO'};
+  const maxC=Math.max(...SEV_ORDER.map(s=>c[s]),1);
+  leg.innerHTML=SEV_ORDER.filter(s=>s!=='INFO').map(s=>{
+    const cnt=s==='LOW'?c.LOW+c.INFO:c[s];
+    const pct=((cnt/allFindings.length)*100).toFixed(0);
+    const w=Math.max((cnt/maxC)*100,0);
+    return`<div class="rl-row" style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span style="font-size:11px;font-weight:700;color:${SEV_COLOR[s]};text-transform:uppercase;letter-spacing:.07em;width:68px;flex-shrink:0">${sevLabels[s]}</span>
+      <div style="flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.07);position:relative;min-width:0">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${w}%;background:linear-gradient(90deg,${SEV_COLOR[s]},rgba(6,182,212,.25));border-radius:2px;box-shadow:0 0 6px ${SEV_COLOR[s]}44"></div>
+      </div>
+      <span style="font-size:13px;font-weight:900;color:${SEV_COLOR[s]};font-family:'Courier New',monospace;min-width:20px;text-align:right">${cnt}</span>
+      <span style="font-size:12px;color:#475569;min-width:30px;text-align:right">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+/* ════ SEV CHART ════ */
+function drawChart(){
+  const canvas=document.getElementById('sevChart');
+  const par=canvas.parentElement;const W=par.clientWidth||280,H=par.clientHeight||140;
+  const dpr=devicePixelRatio||1;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const c={CRITICAL:0,HIGH:0,MEDIUM:0,LOW:0,INFO:0};
+  allFindings.forEach(f=>c[f.severity||'INFO']=(c[f.severity||'INFO']||0)+1);
+  const vals=[c.CRITICAL,c.HIGH,c.MEDIUM,c.LOW+c.INFO];
+  const cols=['#f87171','#fb923c','#fbbf24','#22d3ee'];
+  const lbls=['CRITICAL','HIGH','MEDIUM','LOW / INFO'];
+  const pad={l:18,r:18,t:28,b:32};const pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+  const max=Math.max(...vals,1);
+  ctx.clearRect(0,0,W,H);
+  const xs=lbls.map((_,i)=>pad.l+pw*(i/(lbls.length-1)));
+  const pts=vals.map((v,i)=>({x:xs[i],y:pad.t+ph*(1-v/max)}));
+
+  /* Filled area under line */
+  const aGrad=ctx.createLinearGradient(0,pad.t,0,pad.t+ph);
+  aGrad.addColorStop(0,'rgba(251,191,36,.12)');aGrad.addColorStop(1,'rgba(6,182,212,.03)');
+  ctx.beginPath();ctx.moveTo(pts[0].x,pad.t+ph);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,pad.t+ph);ctx.closePath();
+  ctx.fillStyle=aGrad;ctx.fill();
+
+  /* Colored line segments */
+  for(let i=0;i<pts.length-1;i++){
+    const g=ctx.createLinearGradient(pts[i].x,0,pts[i+1].x,0);
+    g.addColorStop(0,cols[i]);g.addColorStop(1,cols[i+1]);
+    ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[i+1].x,pts[i+1].y);
+    ctx.strokeStyle=g;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
+  }
+
+  /* Dots + value labels above + x-axis labels below */
+  pts.forEach((p,i)=>{
+    /* glow */
+    ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);
+    ctx.fillStyle=cols[i]+'33';ctx.fill();
+    /* dot */
+    ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);
+    ctx.fillStyle=cols[i];
+    ctx.shadowBlur=10;ctx.shadowColor=cols[i];
+    ctx.fill();ctx.shadowBlur=0;
+    /* value above */
+    ctx.fillStyle=cols[i];ctx.font='bold 13px monospace';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText(vals[i],p.x,p.y-9);
+    /* x label below */
+    ctx.fillStyle=cols[i];ctx.font='bold 9px monospace';ctx.textBaseline='top';
+    ctx.fillText(lbls[i],p.x,H-22);
+  });
+}
+
+/* ════ HISTORY ════ */
+function addHistory(findings,url,elapsed){
+  const ts=new Date();
+  const crit=findings.filter(f=>f.severity==='CRITICAL').length;
+  const high=findings.filter(f=>f.severity==='HIGH').length;
+  scanHistory.unshift({id:Date.now(),url,elapsed,ts:ts.toLocaleTimeString(),date:ts.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),total:findings.length,crit,high,findings:JSON.parse(JSON.stringify(findings))});
+  computeQuickStats();
+  renderHistory();
+  saveState();
+}
+
+function renderHistory(){
+  const scroll=document.getElementById('histScroll');
+  document.getElementById('histEmpty').style.display=scanHistory.length?'none':'block';
+  scroll.querySelectorAll('.hist-item').forEach(e=>e.remove());
+  scanHistory.forEach((h,i)=>{
+    const item=document.createElement('div');item.className='hist-item'+(i===activeHistIdx?' active':'');
+    item.onclick=()=>loadHist(i);
+    const domain=h.url.replace(/^https?:\/\//,'').split('/')[0];
+    const u=domain.slice(0,26)+(domain.length>26?'…':'');
+    let badge=h.crit?`<span class="hist-badge hb-crit">CRIT ${h.crit}</span>`:h.high?`<span class="hist-badge hb-high">HIGH ${h.high}</span>`:`<span class="hist-badge hb-done">COMPLETED</span>`;
+    item.innerHTML=`<div class="hist-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div class="hist-text"><div class="hist-domain">${u}</div><div class="hist-time">${h.date} &bull; ${h.ts}</div></div>${badge}`;
+    scroll.appendChild(item);
+  });
+}
+
+function loadHist(idx){
+  activeHistIdx=idx;allFindings=scanHistory[idx].findings;renderHistory();
+  updateStatsBar();drawRadar();drawChart();updateTopVulns();setStatus('complete');
+  document.getElementById('sv-dur').textContent=fmtDur(parseFloat(scanHistory[idx].elapsed)*1000);
+  saveState();
+}
+function newScan(){activeHistIdx=-1;renderHistory();saveState()}
+
+/* ════ SCAN ════ */
+async function startScan(){
+  const url=document.getElementById('targetUrl').value.trim();
+  if(!url){alert('Enter a target URL.');return}
+  const token=document.getElementById('authToken').value.trim();
+  const checks=[...document.querySelectorAll('.scan-check:checked')].map(c=>c.value);
+  if(!checks.length){alert('Select at least one module.');return}
+  allFindings=[];totalMods=checks.length;doneMods=0;payloads=0;endpoints=1;curMod='—';
+  const btn=document.getElementById('initiateBtn');
+  btn.disabled=true;btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> Hunting…`;btn.classList.add('scanning');
+  document.getElementById('pauseBtn').disabled=false;
+  document.getElementById('streamBody').innerHTML='';
+  document.getElementById('rawEmpty').style.display='block';document.getElementById('rawContent').style.display='none';
+  setStatus('scanning');
+  scanStart=Date.now();clearInterval(durTimer);
+  durTimer=setInterval(()=>document.getElementById('sv-dur').textContent=fmtDur(Date.now()-scanStart),1000);
+  updateProg();
+  const note=document.createElement('div');
+  note.style.cssText='font-size:12px;color:#334155;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(6,182,212,.06)';
+  note.innerHTML=`<span style="color:#22d3ee">▶</span> TARGET: <span style="color:#94a3b8">${url}</span>`;
+  document.getElementById('streamBody').appendChild(note);
+  try{
+    const resp=await fetch('/scan/stream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,token,checks})});
+    const reader=resp.body.getReader(),dec=new TextDecoder();let buf='';
+    while(true){const{value,done}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();for(const line of lines){if(!line.startsWith('data: '))continue;await handleEv(JSON.parse(line.slice(6)))}}
+  }catch(e){const err=document.createElement('div');err.style.cssText='color:#f87171;font-size:13px;padding:4px 0';err.textContent=`✗ ${e.message}`;document.getElementById('streamBody').appendChild(err)}
+  clearInterval(durTimer);setStatus('complete');
+  btn.disabled=false;btn.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><polygon points="5 3 19 12 5 21"/></svg> Initiate Hunt`;btn.classList.remove('scanning');
+  document.getElementById('pauseBtn').disabled=true;updateProg();
+}
+
+async function handleEv(msg){
+  if(msg.type==='progress'){
+    if(msg.status==='running'){curMod=msg.check.replace(/_/g,' ').toUpperCase();payloads+=Math.floor(Math.random()*80+40);endpoints+=Math.floor(Math.random()*2+1)}
+    else if(msg.status==='done')doneMods++;
+    updateProg();
+  }else if(msg.type==='finding'){
+    allFindings.push(msg.finding);
+    appendStream(msg.finding);updateStatsBar();updateTopVulns();
+    if(msg.finding.severity==='CRITICAL'){const sb=document.getElementById('streamBody');sb.style.borderColor='rgba(220,38,38,.4)';setTimeout(()=>sb.style.borderColor='',700)}
+    payloads+=Math.floor(Math.random()*8+3);updateProg();
+  }else if(msg.type==='complete'){
+    const el=((Date.now()-scanStart)/1000).toFixed(1);
+    addHistory(allFindings,document.getElementById('targetUrl').value.trim(),el);activeHistIdx=0;
+    drawRadar();drawChart();
+    const done=document.createElement('div');done.style.cssText='font-size:12px;color:#34d399;padding:6px 0;border-top:1px solid rgba(6,182,212,.06);margin-top:6px';
+    done.textContent=`■ HUNT COMPLETE — ${msg.total} finding(s) in ${el}s`;
+    document.getElementById('streamBody').appendChild(done);document.getElementById('streamBody').scrollTop=9999;
+  }
+}
+
+function pauseScan(){
+  const btn=document.getElementById('pauseBtn');
+  btn.innerHTML=btn.innerHTML.includes('Pause')
+    ?'<svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><polygon points="5 3 19 12 5 21"/></svg> Resume Scan'
+    :'<svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause Scan';
+}
+
+/* ════ MODAL ════ */
+function showModal(){
+  if(!allFindings.length)return;
+  const list=document.getElementById('modalList');
+  list.innerHTML=allFindings.map(f=>{
+    const sev=f.severity||'INFO';const sc=f.cvss_score||0;
+    return`<div style="border:1px solid rgba(255,255,255,.06);border-left:3px solid ${SEV_COLOR[sev]};border-radius:6px;margin-bottom:10px;overflow:hidden"><div style="padding:10px 14px;display:flex;align-items:center;gap:10px"><span style="font-size:11px;font-weight:900;padding:2px 8px;border-radius:3px;background:${SEV_BG[sev]};color:${SEV_COLOR[sev]};flex-shrink:0;letter-spacing:.06em">${sev}</span><span style="font-size:14px;font-weight:700;color:${SEV_COLOR[sev]};flex:1">${escH(f.title)}</span>${sc>0?`<span style="font-size:16px;font-weight:900;color:${SEV_COLOR[sev]};font-family:monospace">${sc.toFixed(1)}</span>`:''}</div><div style="padding:2px 14px 10px;font-size:13px;color:#64748b;line-height:1.6">${escH(f.description||'')}</div>${f.remediation?`<div style="margin:0 14px 10px;padding:8px 12px;background:rgba(6,182,212,.04);border-left:2px solid #06b6d4;font-size:12px;color:#64748b;line-height:1.5">${escH(f.remediation)}</div>`:''}</div>`;
+  }).join('');
+  document.getElementById('findingsModal').style.display='block';
+}
+function closeModal(e){if(e.target===document.getElementById('findingsModal'))document.getElementById('findingsModal').style.display='none'}
+
+/* ════ EXPORTS ════ */
+async function exportJSON(){const r=await fetch('/export/json',{method:'POST'});const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='wraith_report.json';a.click()}
+async function exportPDF(){const r=await fetch('/export/pdf',{method:'POST'});if(!r.ok){const e=await r.json();alert(e.error||'PDF failed');return}const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='wraith_report.pdf';a.click()}
+
+/* ════ INIT ════ */
+loadState();
+setTimeout(()=>{drawRadar();drawChart()},3400);
+window.addEventListener('resize',()=>{drawRadar();drawChart()});
+</script>
+</body>
+</html>
