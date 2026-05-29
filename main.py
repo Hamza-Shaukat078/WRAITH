@@ -84,9 +84,14 @@ async def scan_stream(req: ScanRequest):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+class ExportRequest(BaseModel):
+    findings: list[dict] = []
+
+
 @app.post("/export/json")
-async def export_json():
-    content = json.dumps({"findings": _last_results}, indent=2)
+async def export_json(req: ExportRequest):
+    findings = req.findings if req.findings else _last_results
+    content = json.dumps({"findings": findings}, indent=2)
     return StreamingResponse(
         io.BytesIO(content.encode()),
         media_type="application/json",
@@ -95,7 +100,7 @@ async def export_json():
 
 
 @app.post("/export/pdf")
-async def export_pdf():
+async def export_pdf(req: ExportRequest):
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib import colors
@@ -103,6 +108,7 @@ async def export_pdf():
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import cm
 
+        findings = req.findings if req.findings else _last_results
         buf = io.BytesIO()
         doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=2 * cm, bottomMargin=2 * cm)
         styles = getSampleStyleSheet()
@@ -119,7 +125,7 @@ async def export_pdf():
         story.append(Paragraph("WRAITH — Security Hunt Report", ts))
         story.append(Spacer(1, 0.5 * cm))
 
-        for f in _last_results:
+        for f in findings:
             sev = f.get("severity", "INFO")
             sc = f.get("cvss_score", 0.0)
             ss = ParagraphStyle("s", parent=styles["Heading2"],
